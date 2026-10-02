@@ -1,0 +1,9 @@
+{
+  "name": "kacher-dokan-web-frontend",
+  "version": "23.0.0",
+  "private": true,
+  "description": "Kacher Dokan web frontend source. Production web files are served by the Spring Boot backend.",
+  "scripts": {
+    "check": "node --check public/app.js && node --check public/upgrade.js && node --check public/v9.js && node --check public/v12.js && node --check public/v14.js && node --check public/spring-realtime.js"
+  }
+}

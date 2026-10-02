@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>কাছের দোকান — Hyperlocal Grocery Discovery &amp; Ordering</title>
+<meta content="কাছের দোকান — nearby grocery discovery, ordering and delivery." name="description"/>
+<!-- Google Fonts: Outfit for English & Hind Siliguri for Bangla -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;family=Outfit:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- FontAwesome Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+<!-- Leaflet CSS for Map -->
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" rel="stylesheet"/>
+<!-- Application CSS -->
+<link href="style.css" rel="stylesheet">
+<link href="upgrade.css" rel="stylesheet"/>
+<link href="v12.css" rel="stylesheet"/>
+<link href="v13.css" rel="stylesheet"/>
+<link href="v14.css" rel="stylesheet"/>
+</link></head>
+<body class="theme-light">
+<!-- Top Navigation Bar -->
+<header class="navbar" id="mainHeader">
+<div class="nav-container">
+<div class="brand-section" id="brandLogo">
+<div class="logo-icon">
+<i class="fa-solid fa-store"></i>
+</div>
+<div class="brand-text">
+<h1 class="brand-title"><span class="bn-text" data-i18n="brand_name">Kacher Dokan</span></h1>
+<p class="brand-tagline">
+<span class="bn-text" data-i18n="brand_tagline">Nearby shops, easy shopping</span>
+</p>
+</div>
+</div>
+<!-- Live GPS Pill -->
+<div class="gps-badge" id="gpsBadge" title="Click to refresh GPS location">
+<span class="gps-pulse"></span>
+<i class="fa-solid fa-location-crosshairs"></i>
+<div class="gps-info">
+<span class="gps-label" data-i18n="current_location">Current Location</span>
+<span class="gps-coords" id="gpsCoordsText">Dhaka (23.8103, 90.4125)</span>
+</div>
+</div>
+<!-- Navigation & Actions -->
+<div class="nav-actions">
+<!-- Role View Switcher -->
+<div class="view-selector" id="viewSelector">
+<button class="view-btn active" data-view="customer" id="btnCustomerView">
+<i class="fa-solid fa-bag-shopping"></i> <span data-i18n="nav_customer">Customer</span>
+</button>
+<button class="view-btn" data-view="owner" id="btnOwnerView">
+<i class="fa-solid fa-shop"></i> <span data-i18n="nav_owner">Shop Owner</span>
+</button>
+<button class="view-btn" data-view="rider" id="btnRiderView">
+<i class="fa-solid fa-motorcycle"></i> <span data-i18n="rider">Rider</span>
+</button>
+<button class="view-btn" data-view="database" id="btnDbView">
+<i class="fa-solid fa-database"></i> <span data-i18n="nav_db">DB Inspector</span>
+</button>
+</div>
+<!-- Language Switch -->
+<div class="lang-switch" id="langSwitchContainer">
+<button class="lang-btn" id="btnLangBn">🇧🇩 বাংলা</button>
+<button class="lang-btn active" id="btnLangEn">🇬🇧 EN</button>
+</div>
+<!-- Theme Toggle -->
+<button class="icon-btn" id="btnThemeToggle" title="Toggle Dark/Light Mode">
+<i class="fa-solid fa-moon"></i>
+</button>
+<!-- Cart Button -->
+<button class="cart-trigger-btn" id="btnOpenCart">
+<i class="fa-solid fa-basket-shopping"></i>
+<span class="cart-count-badge" id="cartCountBadge">0</span>
+</button>
+<button class="icon-btn notification-icon-btn" id="btnChatAlerts" style="display:none;" title="Message notifications">
+<i class="fa-solid fa-comments"></i><span class="notification-dot" id="chatUnreadBadge" style="display:none;">0</span>
+</button>
+<button class="icon-btn notification-icon-btn" id="btnCallAlerts" style="display:none;" title="Call notifications">
+<i class="fa-solid fa-phone"></i><span class="notification-dot" id="callUnreadBadge" style="display:none;">0</span>
+</button>
+<button class="icon-btn notification-icon-btn" id="btnActionAlerts" style="display:none;" title="Activity notifications">
+<i class="fa-solid fa-bell"></i><span class="notification-dot" id="actionUnreadBadge" style="display:none;">0</span>
+</button>
+<div class="auth-user-menu" id="authUserMenu" style="display: none;">
+<button class="profile-menu-trigger" id="btnOpenProfile" title="View profile" type="button">
+<img alt="Profile" class="header-profile-image" id="headerProfileImage" src="/images/products/grocery.svg"/>
+<span class="auth-user-name" id="authUserName"></span>
+</button>
+<button class="btn btn-xs btn-outline" data-i18n="logout" id="btnLogout">Log out</button>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Application Wrapper -->
+<main class="main-content">
+<!-- ===================================================== -->
+<!-- VIEW 1: CUSTOMER HYPERLOCAL DISCOVERY & SHOPPING      -->
+<!-- ===================================================== -->
+<section class="view-section active" id="customerView">
+<!-- Top Banner / Search & Radius Bar -->
+<div class="hero-control-card">
+<div class="search-box-wrapper">
+<div class="search-input-group">
+<i class="fa-solid fa-magnifying-glass search-icon"></i>
+<input class="search-input" data-placeholder-en="Find product near me... (e.g. Milk, Rice, Eggs, Oil, Salt)" data-placeholder-bn="কাছের পণ্য খুঁজুন... (যেমন: দুধ, চাল, ডিম, তেল, লবণ)" id="productNearMeInput" placeholder="Find product near me... (e.g. Milk, Rice, Eggs, Oil, Salt)" type="text"/>
+<button class="clear-search-btn" id="btnClearSearch" style="display: none;">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<!-- Quick Search Chips -->
+<div class="quick-chips" id="quickChipsContainer">
+<span class="chip-label" data-i18n="popular_searches">Popular:</span>
+<button class="chip-btn" data-query="Milk">🥛 <span data-i18n="item_milk">Milk (দুধ)</span></button>
+<button class="chip-btn" data-query="Rice">🍚 <span data-i18n="item_rice">Rice (চাল)</span></button>
+<button class="chip-btn" data-query="Eggs">🥚 <span data-i18n="item_eggs">Eggs (ডিম)</span></button>
+<button class="chip-btn" data-query="Oil">🛢️ <span data-i18n="item_oil">Soybean Oil (সয়াবিন তেল)</span></button>
+<button class="chip-btn" data-query="Bread">🍞 <span data-i18n="item_bread">Bread (পাউরুটি)</span></button>
+<button class="chip-btn" data-query="Salt">🧂 <span data-i18n="item_salt">Salt (লবণ)</span></button>
+</div>
+</div>
+<!-- Radius Selector Pill Control -->
+<div class="radius-selector-card">
+<div class="radius-header">
+<span class="radius-title">
+<i class="fa-solid fa-street-view"></i> <span data-i18n="search_radius">Search Radius:</span>
+</span>
+<span class="radius-hint" data-i18n="nearest_first_note">Nearest shops receive highest priority</span>
+</div>
+<div class="radius-pills" id="radiusPills">
+<button class="radius-btn" data-radius="100">
+<span class="radius-val">100m</span>
+<span class="radius-sub" data-i18n="rad_100">Immediate Block</span>
+</button>
+<button class="radius-btn active" data-radius="200">
+<span class="radius-badge" data-i18n="recommended">Recommended</span>
+<span class="radius-val">200m</span>
+<span class="radius-sub" data-i18n="rad_200">Same Street</span>
+</button>
+<button class="radius-btn" data-radius="500">
+<span class="radius-val">500m</span>
+<span class="radius-sub" data-i18n="rad_500">Neighborhood</span>
+</button>
+<button class="radius-btn" data-radius="1000">
+<span class="radius-val">1 km</span>
+<span class="radius-sub" data-i18n="rad_1000">Extended Area</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Main Layout: Map & Synchronized Shop List -->
+<div class="hyperlocal-grid">
+<!-- Left: Interactive Map Container -->
+<div class="map-column">
+<div class="card map-card">
+<div class="map-card-header">
+<div class="header-left">
+<span class="live-indicator"></span>
+<h3 class="card-title" data-i18n="live_map_title">Live Hyperlocal Map</h3>
+</div>
+<div class="map-status" id="mapStatusText">
+<i class="fa-solid fa-location-dot"></i> <span data-i18n="loading_nearby_shops" id="shopsFoundCount">Loading nearby shops...</span>
+</div>
+</div>
+<!-- Leaflet Map Canvas -->
+<div class="leaflet-map-canvas" id="hyperlocalMap"></div>
+<!-- Map Legend -->
+<div class="map-legend">
+<div class="legend-item"><span class="legend-dot user-dot"></span> <span data-i18n="legend_you">You (Customer GPS)</span></div>
+<div class="legend-item"><span class="legend-dot open-dot"></span> <span data-i18n="legend_open">Open Shop</span></div>
+<div class="legend-item"><span class="legend-dot closed-dot"></span> <span data-i18n="legend_closed">Closed Shop</span></div>
+<div class="legend-item"><span class="legend-dot radius-dot"></span> <span data-i18n="legend_radius">Radius Boundary</span></div>
+</div>
+</div>
+</div>
+<!-- Right: Results Column (Stores / Product Search Near Me) -->
+<div class="results-column">
+<!-- State A: "Find Product Near Me" Results (Shown when search active) -->
+<div class="search-results-panel" id="productNearMePanel" style="display: none;">
+<div class="panel-header">
+<div>
+<h3 class="panel-title">
+<i class="fa-solid fa-bolt"></i> <span data-i18n="product_near_me_title">Products Available Near You</span>
+</h3>
+<p class="panel-subtitle" id="searchQuerySummary">Showing results for "Milk"</p>
+</div>
+<button class="btn btn-sm btn-ghost" id="btnCloseProductSearch">
+<i class="fa-solid fa-arrow-left"></i> <span data-i18n="back_to_shops">Back to Shops</span>
+</button>
+</div>
+<div class="near-me-list" id="nearMeResultsList">
+<!-- Dynamically populated -->
+</div>
+</div>
+<!-- State B: Nearby Shops List (Default) -->
+<div class="shops-list-panel" id="shopsListPanel">
+<div class="panel-header">
+<div>
+<h3 class="panel-title">
+<i class="fa-solid fa-store"></i> <span data-i18n="nearby_shops_title">Nearby Grocery Shops</span>
+</h3>
+<p class="panel-subtitle" id="shopsRadiusSubtitle">Within 200 meters • Sorted nearest first</p>
+</div>
+<span class="badge badge-primary" id="nearbyCountBadge">0 Shops</span>
+</div>
+<div class="shops-scroll-list" id="shopsListContainer">
+<!-- Dynamically loaded shop cards -->
+</div>
+</div>
+</div>
+</div>
+<!-- Orders & Customer History Bar -->
+<div class="customer-footer-actions">
+<button class="btn btn-outline" id="btnCustomerOrders">
+<i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="my_orders">My Orders &amp; Live Tracking</span>
+</button>
+<button class="btn btn-outline" id="btnCustomerStats">
+<i class="fa-solid fa-chart-pie"></i> <span data-i18n="my_spending_stats">My Spending Statistics</span>
+</button>
+</div>
+</section>
+<!-- ===================================================== -->
+<!-- VIEW 2: SHOP OWNER PORTAL & INVENTORY MANAGEMENT      -->
+<!-- ===================================================== -->
+<section class="view-section" id="ownerView">
+<!-- Owner Shop Header Banner -->
+<div class="owner-shop-banner card">
+<div class="shop-meta">
+<div class="owner-avatar">
+<i class="fa-solid fa-shop"></i>
+</div>
+<div>
+<div class="shop-badge-row">
+<h2 class="owner-shop-name" id="ownerShopName">Rahman Grocery (রহমান গ্রোসারী)</h2>
+<span class="badge badge-success" data-i18n="open" id="ownerShopStatusBadge">🟢 Open</span>
+</div>
+<p class="owner-shop-address" id="ownerShopAddress">House 14, Road 4, Sector 3, Uttara, Dhaka • Phone: 01811000002</p>
+</div>
+</div>
+<div class="owner-actions-top">
+<select class="form-input compact-select" disabled="" id="voiceLanguageSelect" title="Voice follows interface language">
+<option value="bn">Bangla</option><option value="en">English</option>
+</select><small class="voice-language-hint" data-i18n="order_voice_follows_ui" id="voiceLanguageHint">Voice follows interface language</small>
+<button class="btn btn-outline" id="btnReplayGreeting"><i class="fa-solid fa-volume-high"></i> <span data-i18n="greeting">Greeting</span></button>
+<button class="btn btn-outline" disabled="" id="btnReplayLastOrder"><i class="fa-solid fa-volume-high"></i> <span data-i18n="replay_last_order">Replay Last Order</span></button>
+<button class="btn btn-primary" id="btnToggleShopStatus">
+<i class="fa-solid fa-power-off"></i> <span data-i18n="toggle_shop_status">Toggle Open/Closed</span>
+</button>
+<button class="btn btn-success" id="btnOpenAddProductModal">
+<i class="fa-solid fa-plus"></i> <span data-i18n="add_new_product">Add Product</span>
+</button>
+</div>
+</div>
+<div class="welcome-weather-card card" id="sellerGreetingCard" style="display:none;">
+<div><i class="fa-solid fa-cloud-sun"></i><strong id="sellerGreetingText">স্বাগতম</strong></div>
+<span data-i18n="weather_loading" id="sellerWeatherText">Weather loading...</span>
+</div>
+<div class="card rider-offers-card" id="sellerRiderOffersCard">
+<div class="section-heading-row"><div><h3 data-i18n="rider_requests">🛵 Rider Delivery Requests</h3><p data-i18n="rider_requests_help">Nearby riders who offered to deliver your orders.</p></div><span class="badge badge-primary" id="riderOfferCount">0</span></div>
+<div class="rider-offers-list" id="sellerRiderOffersList"><div class="empty-state-small" data-i18n="no_rider_requests">No rider requests yet.</div></div>
+</div>
+<!-- Owner Stat KPI Cards -->
+<div class="kpi-grid">
+<div class="kpi-card card">
+<div class="kpi-icon icon-blue"><i class="fa-solid fa-bag-shopping"></i></div>
+<div>
+<span class="kpi-label" data-i18n="todays_orders">Today's Orders</span>
+<h3 class="kpi-value" id="kpiTodayOrders">12</h3>
+</div>
+</div>
+<div class="kpi-card card">
+<div class="kpi-icon icon-green"><i class="fa-solid fa-bangladeshi-taka-sign"></i></div>
+<div>
+<span class="kpi-label" data-i18n="todays_sales">Today's Sales</span>
+<h3 class="kpi-value" id="kpiTodaySales">৳8,450</h3>
+</div>
+</div>
+<div class="kpi-card card">
+<div class="kpi-icon icon-orange"><i class="fa-solid fa-clock"></i></div>
+<div>
+<span class="kpi-label" data-i18n="pending_orders">Pending Orders</span>
+<h3 class="kpi-value" id="kpiPendingOrders">2</h3>
+</div>
+</div>
+<div class="kpi-card card">
+<div class="kpi-icon icon-purple"><i class="fa-solid fa-boxes-stacked"></i></div>
+<div>
+<span class="kpi-label" data-i18n="inventory_items">Products in Stock</span>
+<h3 class="kpi-value" id="kpiTotalProducts">24</h3>
+</div>
+</div>
+</div>
+<!-- Owner Navigation Tabs -->
+<div class="owner-tabs">
+<button class="owner-tab-btn active" data-tab="orders">
+<i class="fa-solid fa-receipt"></i> <span data-i18n="incoming_orders">Incoming Orders</span>
+</button>
+<button class="owner-tab-btn" data-tab="inventory">
+<i class="fa-solid fa-boxes-packing"></i> <span data-i18n="inventory_management">Inventory Management</span>
+</button>
+<button class="owner-tab-btn" data-tab="analytics">
+<i class="fa-solid fa-chart-line"></i> <span data-i18n="business_analytics">Business Statistics</span>
+</button>
+</div>
+<!-- Tab 1: Incoming Orders Tab -->
+<div class="owner-tab-content active" id="ownerTabOrders">
+<div class="orders-table-wrapper card">
+<div class="table-header">
+<h3 class="card-title" data-i18n="live_order_management">Live Order Management &amp; State Machine</h3>
+<div class="filter-group">
+<button class="filter-btn active" data-status="ALL"><span data-i18n="all_orders">All</span> <span class="filter-count" id="countAllOrders">0</span></button>
+<button class="filter-btn" data-status="PLACED"><span data-i18n="placed">New Placed</span> <span class="filter-count" id="countNewOrders">0</span></button>
+<button class="filter-btn" data-status="PREPARING"><span data-i18n="preparing">Preparing</span> <span class="filter-count" id="countPreparingOrders">0</span></button>
+<button class="filter-btn" data-status="DELIVERED"><span data-i18n="delivered">Delivered</span> <span class="filter-count" id="countCompletedOrders">0</span></button>
+</div>
+</div>
+<div class="orders-list" id="ownerOrdersListContainer">
+<!-- Dynamically populated owner orders -->
+</div>
+</div>
+</div>
+<!-- Tab 2: Inventory Management Tab -->
+<div class="owner-tab-content" id="ownerTabInventory">
+<div class="inventory-table-wrapper card">
+<div class="table-header">
+<h3 class="card-title" data-i18n="shop_inventory_title">Products &amp; Live Stock</h3>
+<span class="text-muted" data-i18n="stock_auto_deduct_note">Stock automatically deducts upon order placement</span>
+</div>
+<div class="inventory-table-container">
+<table class="data-table" id="ownerInventoryTable">
+<thead>
+<tr>
+<th data-i18n="product">Product</th>
+<th data-i18n="category">Category</th>
+<th data-i18n="price">Price (৳)</th>
+<th data-i18n="stock">Stock Level</th>
+<th data-i18n="status">Status</th>
+<th data-i18n="manage_product">Manage Product</th>
+</tr>
+</thead>
+<tbody id="ownerProductsTableBody">
+<!-- Dynamically loaded product rows -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Tab 3: Analytics Tab -->
+<div class="owner-tab-content" id="ownerTabAnalytics">
+<div class="analytics-toolbar">
+<div>
+<h3 class="card-title" data-i18n="analytics_title" style="margin-bottom:.2rem;">Seller Analytics</h3>
+<p data-i18n="analytics_subtitle" style="margin:0;color:var(--text-muted);font-size:.82rem;">Live figures calculated from your actual orders.</p>
+</div>
+<button class="btn btn-sm btn-outline" id="btnRefreshAnalytics"><i class="fa-solid fa-rotate"></i> <span data-i18n="refresh">Refresh</span></button>
+</div>
+<div class="empty-state-small" data-i18n="analytics_loading" id="analyticsLoading">Loading analytics…</div>
+<div id="analyticsContent" style="display:none;">
+<div class="analytics-kpi-grid">
+<div class="analytics-kpi"><span data-i18n="today_revenue">Today's Revenue</span><strong id="analyticsTodayRevenue">৳0</strong></div>
+<div class="analytics-kpi"><span data-i18n="this_week">This Week</span><strong id="analyticsWeekRevenue">৳0</strong></div>
+<div class="analytics-kpi"><span data-i18n="this_month">This Month</span><strong id="analyticsMonthRevenue">৳0</strong></div>
+<div class="analytics-kpi"><span data-i18n="average_order">Average Order</span><strong id="analyticsAov">৳0</strong></div>
+<div class="analytics-kpi"><span data-i18n="completed">Completed</span><strong id="analyticsCompleted">0</strong></div>
+<div class="analytics-kpi"><span data-i18n="cancelled">Cancelled</span><strong id="analyticsCancelled">0</strong></div>
+<div class="analytics-kpi"><span data-i18n="fulfillment">Fulfillment</span><strong id="analyticsFulfillment">0%</strong></div>
+<div class="analytics-kpi"><span data-i18n="low_stock_badge">Low Stock</span><strong id="analyticsLowStock">0</strong></div>
+</div>
+<div class="analytics-grid-v9">
+<div class="card analytics-card-v9">
+<h3 class="card-title" data-i18n="last_7_days">Last 7 Days Revenue</h3>
+<div class="analytics-bars" id="analyticsRevenueBars"></div>
+</div>
+<div class="card analytics-card-v9">
+<h3 class="card-title" data-i18n="top_selling_products">Top-Selling Products</h3>
+<div class="analytics-top-products" id="analyticsTopProducts"></div>
+</div>
+</div>
+<div class="card analytics-card-v9" style="margin-top:1rem;">
+<h3 class="card-title" data-i18n="order_status_summary">Order Status Summary</h3>
+<div class="analytics-status-summary" id="analyticsStatusSummary"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- ===================================================== -->
+<!-- VIEW 3: RIDER DELIVERY PORTAL                          -->
+<!-- ===================================================== -->
+<section class="view-section" id="riderView">
+<div class="rider-dashboard">
+<div class="card rider-hero-card">
+<div class="rider-hero-main">
+<img alt="Rider" class="rider-hero-image" id="riderHeroImage" src="/images/products/grocery.svg"/>
+<div><span class="eyebrow" data-i18n="delivery_partner">DELIVERY PARTNER</span><h2 data-i18n="rider_dashboard" id="riderWelcomeName">Rider Dashboard</h2><p data-i18n="rider_intro">Nearby delivery orders will appear here when you are available.</p></div>
+</div>
+<div class="rider-availability-wrap">
+<span data-i18n="available" id="riderAvailabilityLabel">Available</span>
+<label class="switch"><input checked="" id="riderAvailabilityToggle" type="checkbox"/><span class="slider"></span></label>
+</div>
+</div>
+<div class="rider-grid">
+<div class="card">
+<div class="section-heading-row"><div><h3>📍 <span data-i18n="nearby_delivery_orders">Nearby Delivery Orders</span></h3><p data-i18n="nearby_delivery_sub">Delivery orders from shops around your current location.</p></div><button class="btn btn-sm btn-outline" id="btnRefreshRiderOrders"><i class="fa-solid fa-rotate"></i> <span data-i18n="refresh">Refresh</span></button></div>
+<div class="rider-order-list" id="riderNearbyOrders"><div class="empty-state-small" data-i18n="looking_orders">Looking for nearby orders...</div></div>
+</div>
+<div class="card">
+<div class="section-heading-row"><div><h3>✅ <span data-i18n="assigned_deliveries">My Assigned Deliveries</span></h3><p data-i18n="assigned_deliveries_sub">Accepted jobs, pickup code and delivery status.</p></div></div>
+<div class="rider-order-list" id="riderAssignedOrders"><div class="empty-state-small" data-i18n="no_assigned_delivery">No assigned delivery yet.</div></div>
+</div>
+</div>
+</div>
+</section>
+<!-- ===================================================== -->
+<!-- VIEW 4: LIVE DATABASE INSPECTOR & QUERY RUNNER        -->
+<!-- ===================================================== -->
+<section class="view-section" id="databaseView">
+<div class="db-inspector-container">
+<!-- Top Info Header -->
+<div class="card db-header-card">
+<div class="db-info">
+<div class="db-badge">
+<i class="fa-solid fa-database"></i>
+</div>
+<div>
+<div class="db-title-row">
+<h2 class="db-title">MongoDB: <code class="code-highlight">kaser_dokan</code></h2>
+<span class="badge badge-success" data-i18n="db_connected" id="dbConnStatus"><i class="fa-solid fa-circle-check"></i> Connected to configured MongoDB</span>
+</div>
+<p class="db-subtitle" data-i18n="db_inspector_sub">Inspect real MongoDB documents, geospatial 2dsphere indexes, and test raw queries.</p>
+</div>
+</div>
+<button class="btn btn-outline" id="btnRefreshDbStats">
+<i class="fa-solid fa-rotate"></i> <span data-i18n="refresh_db">Refresh Database</span>
+</button>
+</div>
+<!-- DB Collections Navigation Tabs -->
+<div class="db-tabs-bar" id="dbCollectionsTabs">
+<!-- Dynamic collection buttons: shops, products, users, orders, categories, reviews -->
+</div>
+<!-- Query Runner Card -->
+<div class="card db-query-card">
+<div class="query-card-header">
+<span class="query-title">
+<i class="fa-solid fa-terminal"></i> <span data-i18n="query_runner">Live MongoDB Query &amp; Aggregation Runner</span>
+</span>
+<div class="quick-queries">
+<span data-i18n="presets">Presets:</span>
+<button class="btn btn-xs btn-outline" id="btnPresetGeoNear">$geoNear (200m Nearby)</button>
+<button class="btn btn-xs btn-outline" id="btnPresetFindProducts">db.products.find()</button>
+<button class="btn btn-xs btn-outline" id="btnPresetFindOrders">db.orders.find()</button>
+</div>
+</div>
+<div class="query-input-wrapper">
+<textarea class="query-editor" id="dbQueryEditor" placeholder="Enter collection query..." rows="4"></textarea>
+<div class="query-actions">
+<button class="btn btn-primary" id="btnExecuteQuery">
+<i class="fa-solid fa-play"></i> <span data-i18n="run_query">Execute Query</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Raw JSON Document Viewer -->
+<div class="card db-results-card">
+<div class="results-header">
+<span class="results-title" data-i18n="collection" id="dbCurrentCollectionTitle">Collection: shops</span>
+<span class="results-count" data-i18n="showing_documents" id="dbResultsCount">Showing 5 documents</span>
+</div>
+<pre class="json-code-block" id="dbJsonDisplay"><code data-i18n="db_loading_documents">Loading documents from database...</code></pre>
+</div>
+</div>
+</section>
+</main>
+<!-- ===================================================== -->
+<!-- MODAL 1: STORE DETAILS & PRODUCT CATALOG MODAL        -->
+<!-- ===================================================== -->
+<div class="modal-overlay" id="storeModal" style="display: none;">
+<div class="modal-card store-modal-card">
+<div class="store-modal-header" id="storeModalHeader">
+<button class="modal-close-btn" id="btnCloseStoreModal">×</button>
+<div class="store-header-content">
+<span class="badge badge-distance" id="modalShopDistance">30m away</span>
+<h2 class="modal-store-name" id="modalShopName">Rahman Grocery</h2>
+<p class="modal-store-address" id="modalShopAddress">House 14, Road 4, Sector 3, Uttara</p>
+<div class="modal-store-tags">
+<span class="tag" id="modalShopRating">⭐ 4.8 (86 reviews)</span>
+<span class="tag" id="modalShopHours">🕒 07:30 - 23:00</span>
+<span class="tag" id="modalShopDelivery">🚚 ৳20 Delivery</span>
+</div>
+</div>
+</div>
+<!-- Categories Navigation -->
+<div class="modal-category-tabs" id="modalCategoryTabs">
+<button class="cat-tab active" data-cat="all" data-i18n="cat_all">All Items</button>
+<button class="cat-tab" data-cat="Rice &amp; Grains" data-i18n="cat_rice">Rice &amp; Grains</button>
+<button class="cat-tab" data-cat="Dairy &amp; Eggs" data-i18n="cat_dairy">Dairy &amp; Eggs</button>
+<button class="cat-tab" data-cat="Oil &amp; Spices" data-i18n="cat_oil">Oil &amp; Spices</button>
+<button class="cat-tab" data-cat="Bakery &amp; Bread" data-i18n="cat_bakery">Bakery</button>
+<button class="cat-tab" data-cat="Snacks &amp; Tea" data-i18n="cat_snacks">Snacks</button>
+</div>
+<!-- Products Grid inside Store Modal -->
+<div class="modal-products-grid" id="modalProductsGrid">
+<!-- Dynamically loaded product cards -->
+</div>
+</div>
+</div>
+<!-- ===================================================== -->
+<!-- MODAL 2: CART & CHECKOUT DRAWER                      -->
+<!-- ===================================================== -->
+<div class="cart-drawer-overlay" id="cartDrawer" style="display: none;">
+<div class="cart-drawer-card">
+<div class="cart-header">
+<div class="cart-title-row">
+<i class="fa-solid fa-basket-shopping text-primary"></i>
+<div>
+<h3 class="cart-title" data-i18n="your_cart">Your Cart</h3>
+<p class="cart-shop-name" id="cartShopName">From: Rahman Grocery</p>
+</div>
+</div>
+<button class="modal-close-btn" id="btnCloseCart">×</button>
+</div>
+<!-- Cart Items List -->
+<div class="cart-items-container" id="cartItemsList">
+<!-- Dynamically loaded cart items -->
+</div>
+<!-- Cart Summary & Checkout Form -->
+<div class="cart-footer" id="cartFooter">
+<div class="checkout-options">
+<div class="form-group">
+<label class="form-label" data-i18n="delivery_type">Fulfillment Method:</label>
+<div class="radio-toggle-group">
+<label class="radio-label active" id="lblDelivery">
+<input checked="" name="orderType" type="radio" value="DELIVERY"/>
+<span>🚚 <span data-i18n="home_delivery">Home Delivery (৳20)</span></span>
+</label>
+<label class="radio-label" id="lblPickup">
+<input name="orderType" type="radio" value="PICKUP"/>
+<span>🏪 <span data-i18n="shop_pickup">Pick up at Store (Free)</span></span>
+</label>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="delivery_address">Delivery Address:</label>
+<input class="form-input" id="checkoutAddress" type="text" value="House 12, Road 4, Sector 3, Uttara, Dhaka"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="phone_number">Contact Phone:</label>
+<input class="form-input" id="checkoutPhone" type="text" value="01711000001"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="payment_method">Payment Method:</label>
+<div class="payment-method-grid" id="paymentMethodGrid">
+<button class="payment-method active" data-payment="CASH_ON_DELIVERY" type="button">💵 <span data-i18n="cash">Cash</span></button>
+<button class="payment-method" data-payment="BKASH" type="button">🟣 <span>bKash</span></button>
+<button class="payment-method" data-payment="NAGAD" type="button">🟠 <span>Nagad</span></button>
+<button class="payment-method" data-payment="UPAY" type="button">🟢 <span>Upay</span></button>
+</div>
+<small class="payment-note" data-i18n="payment_demo_note">Mobile payments run in demo mode until official merchant credentials are configured.</small>
+</div>
+</div>
+<div class="price-breakdown">
+<div class="price-row">
+<span data-i18n="subtotal">Subtotal</span>
+<span id="cartSubtotal">৳0</span>
+</div>
+<div class="price-row">
+<span data-i18n="delivery_fee">Neighborhood Delivery Fee</span>
+<span id="cartDeliveryFee">৳20</span>
+</div>
+<div class="price-row total-row">
+<span data-i18n="total_amount">Total Amount</span>
+<span id="cartTotal">৳0</span>
+</div>
+</div>
+<button class="btn btn-primary btn-block btn-lg" id="btnPlaceOrder">
+<i class="fa-solid fa-check"></i> <span data-i18n="confirm_place_order">Place Order (Cash on Delivery)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ===================================================== -->
+<!-- MODAL 3: LIVE ORDER TRACKING TIMELINE MODAL          -->
+<!-- ===================================================== -->
+<div class="modal-overlay" id="orderTrackingModal" style="display: none;">
+<div class="modal-card tracking-modal-card">
+<div class="modal-header">
+<div>
+<span class="badge badge-success" data-i18n="order_word" id="trackOrderNumber">Order #KD-0012</span>
+<h3 class="modal-title" data-i18n="live_tracking_title">Hyperlocal Live Order Tracking</h3>
+</div>
+<button class="modal-close-btn" id="btnCloseTrackingModal">×</button>
+</div>
+<div class="tracking-body">
+<div class="tracking-shop-banner">
+<i class="fa-solid fa-store text-primary"></i>
+<div>
+<h4 id="trackShopName">Rahman Grocery</h4>
+<p id="trackShopEstimated">Estimated delivery time: <strong>10 - 15 mins</strong> (Only 35m away)</p>
+</div>
+</div>
+<!-- Vertical Stepper Timeline -->
+<div class="stepper-timeline" id="trackingStepper">
+<div class="step-item completed" id="stepPlaced">
+<div class="step-icon"><i class="fa-solid fa-check"></i></div>
+<div class="step-content">
+<h5 data-i18n="step_placed">Order Placed</h5>
+<p data-i18n="step_placed_desc">Received by shop system</p>
+</div>
+</div>
+<div class="step-item active" id="stepAccepted">
+<div class="step-icon"><i class="fa-solid fa-thumbs-up"></i></div>
+<div class="step-content">
+<h5 data-i18n="step_accepted">Order Accepted</h5>
+<p data-i18n="step_accepted_desc">Shop owner verified stock</p>
+</div>
+</div>
+<div class="step-item" id="stepPreparing">
+<div class="step-icon"><i class="fa-solid fa-box"></i></div>
+<div class="step-content">
+<h5 data-i18n="step_preparing">Preparing &amp; Packing</h5>
+<p data-i18n="step_preparing_desc">Packing fresh items</p>
+</div>
+</div>
+<div class="step-item" id="stepReady">
+<div class="step-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+<div class="step-content">
+<h5 data-i18n="step_ready">Ready for Pickup / Delivery</h5>
+<p data-i18n="step_ready_desc">Package is ready</p>
+</div>
+</div>
+<div class="step-item" id="stepDelivery">
+<div class="step-icon"><i class="fa-solid fa-person-biking"></i></div>
+<div class="step-content">
+<h5 data-i18n="step_out_for_delivery">Out for Delivery</h5>
+<p data-i18n="step_delivery_desc">Neighborhood assistant heading to your address</p>
+</div>
+</div>
+<div class="step-item" id="stepDelivered">
+<div class="step-icon"><i class="fa-solid fa-house-chimney-user"></i></div>
+<div class="step-content">
+<h5 data-i18n="step_delivered">Delivered</h5>
+<p data-i18n="step_delivered_desc">Order fulfilled successfully</p>
+</div>
+</div>
+</div>
+<div class="tracking-items-summary" id="trackItemsSummary">
+<!-- Summary of items in tracking -->
+</div>
+<div class="order-contact-actions">
+<button class="btn btn-primary" data-i18n="chat_with_shop" id="btnOpenOrderChat"><i class="fa-solid fa-comments"></i> Chat with Shop</button>
+<button class="btn btn-outline" data-i18n="call_shop_short" id="btnContactShop"><i class="fa-solid fa-phone"></i> Call Shop</button>
+</div>
+<div class="live-sync-note" data-i18n="live_sync_note"><span class="pulse-dot"></span> Tracking and chat update live while this page is open.</div>
+</div>
+</div>
+</div>
+<!-- ORDER CHAT MODAL -->
+<div class="modal-overlay" id="orderChatModal" style="display:none;">
+<div class="modal-card chat-modal-card">
+<div class="modal-header">
+<div><span class="badge badge-success" data-i18n="order_word" id="chatOrderBadge">Order</span><h3 class="modal-title" data-i18n="order_chat">Order Chat</h3><small class="chat-privacy-note" data-i18n="chat_private">Private order conversation · Customer / Seller / assigned Rider only</small></div>
+<button class="modal-close-btn" id="btnCloseOrderChat">×</button>
+</div>
+<div class="chat-messages" id="chatMessages"></div>
+<form class="chat-composer" id="chatForm">
+<input autocomplete="off" class="form-input" id="chatInput" maxlength="1500" placeholder="Write a message…"/>
+<button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> <span data-i18n="send">Send</span></button>
+</form>
+</div>
+</div>
+<!-- ===================================================== -->
+<!-- MODAL 4: ADD PRODUCT MODAL (FOR SHOP OWNER)          -->
+<!-- ===================================================== -->
+<div class="modal-overlay" id="addProductModal" style="display: none;">
+<div class="modal-card form-modal-card v18-add-product-card">
+<div class="modal-header">
+<div><span class="eyebrow" data-i18n="inventory_label">INVENTORY</span><h3 class="modal-title" data-i18n="add_product_title">Add New Product to Shop</h3><small class="v18-modal-sub" data-i18n="add_product_subtitle">Add product details, stock, availability and photo.</small></div>
+<button class="modal-close-btn" id="btnCloseAddProductModal">×</button>
+</div>
+<form class="modal-form v20-product-form" id="formAddProduct"><div class="v20-form-section-title"><span>01</span><div><strong data-i18n="basic_information">Basic information</strong><small data-i18n="custom_category_help">Choose Others / Custom to enter any category you want.</small></div></div>
+<div class="form-group">
+<label class="form-label" data-i18n="product_name_en">Product Name (English):</label>
+<input class="form-input" data-placeholder-bn="যেমন: Radhuni Mustard Oil" data-placeholder-en="e.g. Radhuni Mustard Oil" id="newProdName" placeholder="e.g. Radhuni Mustard Oil" required="" type="text"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="product_name_bn">Product Name (বাংলা):</label>
+<input class="form-input" data-placeholder-bn="যেমন: রাঁধুনী সরিষার তেল" data-placeholder-en="e.g. রাঁধুনী সরিষার তেল" id="newProdNameBn" placeholder="e.g. রাঁধুনী সরিষার তেল" type="text"/>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label class="form-label" data-i18n="category">Category:</label>
+<select class="form-input" id="newProdCategory">
+<option data-bn="চাল ও শস্য" data-en="Rice &amp; Grains" value="Rice &amp; Grains">Rice &amp; Grains</option>
+<option data-bn="ডাল ও ডালজাত পণ্য" data-en="Lentils &amp; Pulses" value="Lentils &amp; Pulses">Lentils &amp; Pulses</option>
+<option data-bn="দুধ ও ডিম" data-en="Dairy &amp; Eggs" value="Dairy &amp; Eggs">Dairy &amp; Eggs</option>
+<option data-bn="তেল ও ঘি" data-en="Oil &amp; Ghee" value="Oil &amp; Ghee">Oil &amp; Ghee</option>
+<option data-bn="মসলা ও সস" data-en="Spices &amp; Condiments" value="Spices &amp; Condiments">Spices &amp; Condiments</option>
+<option data-bn="ফল ও সবজি" data-en="Fruits &amp; Vegetables" value="Fruits &amp; Vegetables">Fruits &amp; Vegetables</option>
+<option data-bn="মাংস ও মাছ" data-en="Meat &amp; Fish" value="Meat &amp; Fish">Meat &amp; Fish</option>
+<option data-bn="বেকারি ও রুটি" data-en="Bakery &amp; Bread" value="Bakery &amp; Bread">Bakery &amp; Bread</option>
+<option data-bn="স্ন্যাকস ও বিস্কুট" data-en="Snacks &amp; Biscuits" value="Snacks &amp; Biscuits">Snacks &amp; Biscuits</option>
+<option data-bn="পানীয়" data-en="Beverages" value="Beverages">Beverages</option>
+<option data-bn="চা ও কফি" data-en="Tea &amp; Coffee" value="Tea &amp; Coffee">Tea &amp; Coffee</option>
+<option data-bn="ফ্রোজেন খাবার" data-en="Frozen Foods" value="Frozen Foods">Frozen Foods</option>
+<option data-bn="ইনস্ট্যান্ট খাবার" data-en="Instant Foods" value="Instant Foods">Instant Foods</option>
+<option data-bn="ব্যক্তিগত যত্ন" data-en="Personal Care" value="Personal Care">Personal Care</option>
+<option data-bn="শিশু যত্ন" data-en="Baby Care" value="Baby Care">Baby Care</option>
+<option data-bn="গৃহস্থালি ও পরিষ্কার-পরিচ্ছন্নতা" data-en="Household &amp; Cleaning" value="Household &amp; Cleaning">Household &amp; Cleaning</option>
+<option data-bn="স্টেশনারি" data-en="Stationery" value="Stationery">Stationery</option>
+<option data-bn="পোষা প্রাণীর পণ্য" data-en="Pet Care" value="Pet Care">Pet Care</option>
+<option data-bn="ইলেকট্রনিক্স ও আনুষঙ্গিক" data-en="Electronics &amp; Accessories" value="Electronics &amp; Accessories">Electronics &amp; Accessories</option>
+<option data-bn="অন্যান্য / নিজের ক্যাটাগরি" data-en="Others / Custom" value="Others">Others / Custom</option>
+</select>
+<input class="form-input" data-placeholder-bn="নিজের ক্যাটাগরির নাম লিখুন" data-placeholder-en="Enter your own category" id="newProdCustomCategory" maxlength="60" placeholder="Enter your own category" style="display:none;margin-top:8px" type="text"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="unit">Unit / Weight:</label>
+<input class="form-input" data-placeholder-bn="যেমন: ১ লিটার, ৫০০ গ্রাম, ১২টি" data-placeholder-en="e.g. 1 Litre, 500 gm, 12 pcs" id="newProdUnit" placeholder="e.g. 1 Litre, 500 gm, 12 pcs" required="" type="text"/>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label class="form-label" data-i18n="brand_optional">Brand (optional):</label>
+<input class="form-input" data-placeholder-bn="যেমন: রাঁধুনী, প্রাণ, ফ্রেশ" data-placeholder-en="e.g. Radhuni, PRAN, Fresh" id="newProdBrand" maxlength="80" placeholder="e.g. Radhuni, PRAN, Fresh" type="text"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="product_details_optional">Product details (optional):</label>
+<input class="form-input" data-placeholder-bn="ছোট বিবরণ, সাইজ বা ভ্যারিয়েন্ট" data-placeholder-en="Short note, size or variant" id="newProdDescription" maxlength="180" placeholder="Short note, size or variant" type="text"/>
+</div>
+</div>
+<div class="v20-form-section-title"><span>02</span><div><strong data-i18n="pricing_stock">Price &amp; stock</strong></div></div><div class="form-row">
+<div class="form-group">
+<label class="form-label" data-i18n="price">Price (৳):</label>
+<input class="form-input" id="newProdPrice" placeholder="৳" required="" type="number"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="initial_stock">Initial Stock Quantity:</label>
+<input class="form-input" id="newProdStock" placeholder="Quantity" required="" type="number"/>
+</div>
+</div>
+<div class="v20-form-section-title"><span>03</span><div><strong data-i18n="media_availability">Photo &amp; availability</strong></div></div><div class="form-group">
+<label class="form-label" data-i18n="product_photo">Product Photo:</label>
+<div class="photo-choice-tabs"><button class="photo-choice active" data-i18n="choose_default" id="btnChooseDefaultProductPhoto" type="button">Choose Default</button><button class="photo-choice" data-i18n="upload_photo" id="btnUploadProductPhoto" type="button">Upload Photo</button></div>
+<input accept="image/png,image/jpeg,image/webp" class="form-input" id="newProdImageFile" style="display:none;" type="file"/>
+<div class="default-photo-grid" id="defaultProductPhotoGrid"></div>
+<div class="image-preview-wrap v18-image-preview"><img alt="Product preview" id="newProdImagePreview" src="/images/products/grocery.svg"/><span data-i18n="photo_preview">Photo preview</span></div>
+<input id="newProdImageUrl" type="hidden" value="/images/products/grocery.svg"/>
+</div>
+<div class="v18-availability-row"><div><strong data-i18n="customer_availability">Customer availability</strong><small data-i18n="availability_help">Turn off to keep the product in inventory without allowing orders.</small></div><label class="v18-switch"><input checked="" id="newProdAvailable" type="checkbox"/><span></span></label></div>
+<div class="v18-add-product-tip" data-i18n="product_tip">Tip: use a clear square photo and enter stock before saving.</div>
+<button class="btn btn-primary btn-block btn-lg" type="submit">
+<i class="fa-solid fa-cloud-arrow-up"></i> <span data-i18n="save_to_mongodb">Save Product to MongoDB</span>
+</button>
+</form>
+</div>
+</div>
+<!-- V14 Product Editor: edit every existing seller inventory item -->
+<div class="modal-overlay" id="editProductModal" style="display:none;">
+<div class="modal-card v14-product-editor-card">
+<div class="modal-header"><div><span class="eyebrow" data-i18n="inventory_label">INVENTORY</span><h3 class="modal-title" data-i18n="edit_product">Edit Product</h3></div><button class="modal-close-btn" id="btnCloseEditProduct">×</button></div>
+<form class="modal-form" id="editProductForm">
+<input id="editProdId" type="hidden"/>
+<div class="v14-edit-product-head"><img alt="Product" id="editProdImagePreview" src="/images/products/grocery.svg"/><div><strong data-i18n="product" id="editProdCurrentName">Product</strong><small data-i18n="changes_shared">Changes are shared with customers immediately.</small></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="product_name">Product Name</label><input class="form-input" id="editProdName" required=""/></div><div class="form-group"><label class="form-label" data-i18n="bangla_name">Bangla Name</label><input class="form-input" id="editProdNameBn"/></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="category">Category</label><input class="form-input" id="editProdCategory" placeholder="Groceries"/></div><div class="form-group"><label class="form-label" data-i18n="unit">Unit / Weight</label><input class="form-input" id="editProdUnit" placeholder="1 kg"/></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="brand_optional">Brand (optional):</label><input class="form-input" id="editProdBrand" maxlength="80" placeholder="e.g. PRAN"/></div><div class="form-group"><label class="form-label" data-i18n="product_details_optional">Product details (optional):</label><input class="form-input" id="editProdDescription" maxlength="180" placeholder="Short note, size or variant"/></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="price">Price (৳)</label><input class="form-input" id="editProdPrice" min="0" required="" step="0.01" type="number"/></div><div class="form-group"><label class="form-label" data-i18n="stock">Stock</label><input class="form-input" id="editProdStock" min="0" required="" step="1" type="number"/></div></div>
+<div class="v14-availability-row"><div><strong data-i18n="customer_availability">Customer availability</strong><small data-i18n="unavailable_help">Unavailable keeps the item in inventory but blocks ordering.</small></div><button class="v14-availability-toggle" data-i18n="available" id="editProdAvailability" type="button">Available</button></div>
+<div class="form-group"><label class="form-label" data-i18n="product_photo">Product Photo</label><div class="photo-choice-tabs"><button class="photo-choice active" data-i18n="choose_default" id="editProdChooseDefault" type="button">Choose Default</button><button class="photo-choice" data-i18n="upload_photo" id="editProdChooseUpload" type="button">Upload Photo</button></div><input accept="image/png,image/jpeg,image/webp" class="form-input" id="editProdImageFile" style="display:none;" type="file"/><div class="default-photo-grid" id="editProdDefaultGrid"></div><input id="editProdImageUrl" type="hidden"/></div>
+<div class="v14-product-editor-actions"><button class="btn btn-danger" data-i18n="delete_product" id="btnDeleteProduct" type="button"><i class="fa-solid fa-trash"></i> Delete Product</button><button class="btn btn-primary" data-i18n="save_changes" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button></div>
+</form>
+</div>
+</div>
+<!-- Profile Modal: Customer / Seller / Rider -->
+<div class="modal-overlay" id="profileModal" style="display:none;">
+<div class="modal-card profile-modal-card">
+<div class="modal-header"><div><span class="eyebrow" data-i18n="my_profile">MY PROFILE</span><h3 class="modal-title" data-i18n="profile" id="profileModalTitle">Profile</h3></div><button class="modal-close-btn" id="btnCloseProfile">×</button></div>
+<form class="modal-form" id="profileForm">
+<div class="profile-photo-editor">
+<img alt="Profile photo" id="profileImagePreview" src="/images/products/grocery.svg"/>
+<div><label class="btn btn-sm btn-outline" data-i18n="choose_photo" for="profileImageFile"><i class="fa-solid fa-camera"></i> Choose Photo</label><input accept="image/png,image/jpeg,image/webp" hidden="" id="profileImageFile" type="file"/><button class="btn btn-sm btn-outline" data-i18n="remove" id="btnRemoveProfilePhoto" type="button">Remove</button><small data-i18n="image_file_note">PNG/JPG/WEBP, max 4 MB.</small></div>
+</div>
+<input id="profileImageUrl" type="hidden"/>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="full_name">Full Name</label><input class="form-input" id="profileName" required=""/></div><div class="form-group"><label class="form-label" data-i18n="role">Role</label><input class="form-input" disabled="" id="profileRole"/></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="phone">Phone</label><input class="form-input" id="profilePhone" required=""/></div><div class="form-group"><label class="form-label" data-i18n="email">Email</label><input class="form-input" disabled="" id="profileEmail"/></div></div>
+<div class="form-group"><label class="form-label" data-i18n="address">Address</label><textarea class="form-input" id="profileAddress" placeholder="Your address" rows="2"></textarea></div>
+<div class="form-group rider-profile-only" style="display:none;"><label class="form-label" data-i18n="vehicle_type">Vehicle Type</label><select class="form-input" id="profileVehicleType"><option data-i18n="bicycle">Bicycle</option><option data-i18n="motorcycle">Motorcycle</option><option data-i18n="scooter">Scooter</option><option data-i18n="walking">Walking</option></select></div><div class="rider-profile-only rider-verification-profile" style="display:none;"><hr/><div class="section-heading-row"><div><h4 data-i18n="rider_verification">Rider Verification</h4><small data-i18n="rider_verification_help">Optional for this demo build. Documents are stored privately, not as public product/profile files.</small></div><span class="badge badge-warning" data-i18n="not_submitted" id="profileVerificationStatus">NOT SUBMITTED</span></div><div class="form-row"><div class="form-group"><label class="form-label" data-i18n="id_type">ID Type</label><select class="form-input" id="profileVerificationType"><option data-i18n="choose" value="">Choose</option><option data-i18n="national_id" value="NID">National ID</option><option data-i18n="birth_certificate" value="BIRTH_CERTIFICATE">Birth Certificate</option></select></div><div class="form-group"><label class="form-label" data-i18n="id_number">ID / Birth Certificate Number</label><input class="form-input" id="profileVerificationNumber" placeholder="Optional"/></div></div><div class="form-group"><label class="form-label" data-i18n="permanent_address">Permanent Address</label><textarea class="form-input" id="profilePermanentAddress" placeholder="Permanent address" rows="2"></textarea></div><div class="form-row"><div class="form-group"><label class="form-label" data-i18n="id_file">NID / Birth Certificate File</label><input accept="image/png,image/jpeg,image/webp,application/pdf" class="form-input" id="profileIdDocumentFile" type="file"/><small data-i18n="optional_3mb" id="profileIdDocumentState">Optional · max 3 MB</small></div><div class="form-group"><label class="form-label" data-i18n="utility_bill">Electricity / Gas / Utility Bill</label><input accept="image/png,image/jpeg,image/webp,application/pdf" class="form-input" id="profileUtilityBillFile" type="file"/><small data-i18n="optional_3mb" id="profileUtilityBillState">Optional · max 3 MB</small></div></div></div>
+<div id="sellerProfileFields" style="display:none;"><hr/><h4 data-i18n="shop_details">Shop Details</h4><div class="form-row"><div class="form-group"><label class="form-label" data-i18n="shop_name_en">Shop Name (English)</label><input class="form-input" id="profileShopName"/></div><div class="form-group"><label class="form-label" data-i18n="shop_name_bn">দোকানের নাম (বাংলা)</label><input class="form-input" id="profileShopNameBn"/></div></div><div class="form-group"><label class="form-label" data-i18n="shop_address">Shop Address</label><textarea class="form-input" id="profileShopAddress" rows="2"></textarea></div></div>
+<button class="btn btn-primary btn-block" data-i18n="save_profile" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+</form>
+</div>
+</div>
+<!-- Activity Notification Center -->
+<div class="modal-overlay" id="notificationCenterModal" style="display:none;">
+<div class="modal-card notification-center-card">
+<div class="modal-header"><div><span class="eyebrow" data-i18n="activity">ACTIVITY</span><h3 class="modal-title" data-i18n="notifications">Notifications</h3></div><button class="modal-close-btn" id="btnCloseNotificationCenter">×</button></div>
+<div class="notification-center-list" id="notificationCenterList"><div class="empty-state-small" data-i18n="no_notifications">No notifications yet.</div></div>
+</div>
+</div>
+<!-- Toast Notification Container -->
+<div class="toast-container" id="toastContainer"></div>
+<!-- Authentication Gate -->
+<div class="auth-overlay" id="authOverlay">
+<div class="auth-welcome" id="authWelcome">
+<div class="auth-welcome-copy"><span class="auth-kicker" data-i18n="brand_name">Kacher Dokan</span><h2 data-i18n="auth_hero_title">Find nearby. Shop easily.</h2><p data-i18n="auth_hero_sub">আপনার কাছের দোকান, এক জায়গায়</p><div class="auth-language-row"><button class="auth-language-toggle" id="btnAuthBn">Bangla</button><button class="auth-language-toggle active" id="btnAuthEn">English</button></div><button class="btn btn-primary btn-lg" data-i18n="get_started" id="btnGetStarted">Get Started <i class="fa-solid fa-arrow-right"></i></button></div>
+</div>
+<div class="modal-card auth-card" id="authRoleStep" style="display: none;">
+<div class="auth-brand"><i class="fa-solid fa-store"></i></div>
+<h2 class="modal-title" data-i18n="choose_account">Choose your account</h2><p class="auth-subtitle" data-i18n="choose_account_help">আপনি কীভাবে কাছের দোকান ব্যবহার করবেন?</p>
+<div class="auth-role-grid"><button class="auth-role-option" data-role="USER"><i class="fa-solid fa-bag-shopping"></i><strong data-i18n="customer">Customer</strong><span data-i18n="customer_sub">কেনাকাটা করুন</span></button><button class="auth-role-option" data-role="SHOP_OWNER"><i class="fa-solid fa-shop"></i><strong data-i18n="owner">Shop Owner</strong><span data-i18n="owner_sub">দোকান পরিচালনা করুন</span></button><button class="auth-role-option" data-role="RIDER"><i class="fa-solid fa-motorcycle"></i><strong data-i18n="rider">Rider</strong><span data-i18n="rider_sub">ডেলিভারি করুন</span></button></div>
+<button class="auth-language-toggle" data-i18n="auth_language_toggle" id="btnAuthLanguage">বাংলা / English</button>
+</div>
+<div class="modal-card auth-card" id="authFormStep" style="display: none;">
+<button class="auth-back-btn" data-i18n="back" id="btnAuthBack"><i class="fa-solid fa-arrow-left"></i> Back</button>
+<div class="auth-brand"><i class="fa-solid fa-store"></i></div>
+<h2 class="modal-title" data-i18n="customer_account" id="authFormTitle">Customer account</h2><p class="auth-subtitle" data-i18n="login_or_create" id="authFormSubtitle">Log in or create your account.</p>
+<div class="auth-mode-tabs"><button class="auth-mode active" data-auth-mode="login" data-i18n="login">Log in</button><button class="auth-mode" data-auth-mode="register" data-i18n="register">Register</button></div>
+<form class="modal-form" id="loginForm">
+<div class="form-group register-only" style="display: none;"><label class="form-label" data-i18n="full_name" for="registerName">Full name</label><input autocomplete="name" class="form-input" id="registerName" type="text"/></div>
+<div class="form-group register-only" style="display: none;"><label class="form-label" data-i18n="phone" for="registerPhone">Phone</label><input autocomplete="tel" class="form-input" id="registerPhone" type="tel"/></div>
+<div class="form-group">
+<label class="form-label" data-i18n="email_or_phone" for="loginIdentifier">Email or phone</label>
+<input autocomplete="username" class="form-input" id="loginIdentifier" required="" type="text"/>
+</div>
+<div class="form-group">
+<label class="form-label" data-i18n="password" for="loginPassword">Password</label>
+<input autocomplete="current-password" class="form-input" id="loginPassword" required="" type="password"/>
+</div>
+<div class="form-group register-only" style="display: none;"><label class="form-label" data-i18n="email" for="registerEmail">Email</label><input autocomplete="email" class="form-input" id="registerEmail" type="email"/></div>
+<div class="rider-registration-section" id="riderRegistrationSecurity" style="display:none;">
+<div class="rider-security-heading"><i class="fa-solid fa-shield-halved"></i><div><strong data-i18n="rider_identity_verification">Rider identity verification</strong><small data-i18n="rider_identity_help">Optional for now · helps seller/customer trust and future verification.</small></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="id_type">ID Type</label><select class="form-input" id="registerRiderIdType"><option data-i18n="choose" value="">Choose</option><option data-i18n="national_id" value="NID">National ID</option><option data-i18n="birth_certificate" value="BIRTH_CERTIFICATE">Birth Certificate</option></select></div><div class="form-group"><label class="form-label" data-i18n="id_number">ID / Birth Certificate Number</label><input class="form-input" id="registerRiderIdNumber" placeholder="Optional"/></div></div>
+<div class="form-group"><label class="form-label" data-i18n="permanent_address">Permanent Address</label><textarea class="form-input" id="registerRiderPermanentAddress" placeholder="Permanent address (optional)" rows="2"></textarea></div>
+<div class="form-row"><div class="form-group"><label class="form-label" data-i18n="id_document">NID / Birth Certificate</label><input accept="image/png,image/jpeg,image/webp,application/pdf" class="form-input" id="registerRiderIdFile" type="file"/><small data-i18n="optional_3mb">Optional · max 3 MB</small></div><div class="form-group"><label class="form-label" data-i18n="utility_short">Electricity / Gas Bill</label><input accept="image/png,image/jpeg,image/webp,application/pdf" class="form-input" id="registerRiderUtilityFile" type="file"/><small data-i18n="permanent_proof">Permanent-address proof · optional · max 3 MB</small></div></div>
+</div>
+<button class="btn btn-primary btn-block btn-lg" data-i18n="login" id="authSubmitButton" type="submit">
+<i class="fa-solid fa-right-to-bracket"></i> Log in
+        </button>
+<p class="auth-demo-hint" data-i18n="demo_accounts" id="authDemoHint">Demo accounts use password: <strong>123456</strong></p>
+<p class="auth-error" id="loginError" role="alert"></p>
+</form>
+</div>
+</div>
+<!-- Leaflet Map JS Library -->
+<script crossorigin="" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Application Client JS -->
+<script src="/spring-realtime.js"></script>
+<script src="app.js"></script>
+<script src="upgrade.js"></script>
+<script src="v9.js"></script>
+<script src="v12.js"></script>
+<script src="v14.js"></script>
+</body>
+</html>

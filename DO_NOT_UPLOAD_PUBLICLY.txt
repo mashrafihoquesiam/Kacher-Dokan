@@ -1,0 +1,1 @@
+IMPORTANT: This configured project-show ZIP contains temporary live MongoDB/Cloudinary credentials in kaser-dokan-web/.env. Keep it private. Rotate both credentials after the show before any public source release.

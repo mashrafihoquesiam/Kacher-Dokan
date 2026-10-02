@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: kacher-dokan-spring
+    runtime: docker
+    rootDir: kaser-dokan-backend
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: DB_NAME
+        value: kaser_dokan
+      - key: MONGO_URI
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false

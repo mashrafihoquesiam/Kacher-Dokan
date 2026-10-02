@@ -1,0 +1,43 @@
+/* V13: cart scroll + clearer customer cancellation UX */
+.cart-drawer-card {
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.cart-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: var(--bg-card);
+}
+.cart-items-container {
+  flex: 0 0 auto;
+  overflow: visible;
+  min-height: 0;
+}
+.cart-footer {
+  flex: 0 0 auto;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+.customer-cancel-hint {
+  margin-top: .65rem;
+  padding: .65rem .75rem;
+  border-radius: 10px;
+  border: 1px solid #d97706;
+  background: rgba(217,119,6,.10);
+  color: var(--text-secondary);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.customer-cancel-closed {
+  margin-top: .65rem;
+  color: var(--text-muted);
+  font-size: .76rem;
+}
+@media (max-width: 640px) {
+  .cart-drawer-card { width: 100%; }
+  .cart-header { padding: .9rem 1rem; }
+  .cart-items-container, .cart-footer { padding-left: 1rem; padding-right: 1rem; }
+}

@@ -1,0 +1,7 @@
+target/
+.env
+uploads/
+private_uploads/
+.idea/
+.vscode/
+*.log
